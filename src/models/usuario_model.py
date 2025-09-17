@@ -5,7 +5,7 @@ from passlib.hash import pbkdf2_sha256 as sha256
 
 #
 # Define a classe Usuario, que herda de db.Model, tornando-a um modelo do banco de dados
-class Usuario(db.Model):
+class UsuarioModel(db.Model):
     # Define o nome da tabela no banco de dados como 'tb_usuario'
     __tablename__ = "tb_usuario"
 

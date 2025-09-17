@@ -1,42 +1,75 @@
-# Importa o módulo usuario_model do diretório models (um nível acima)
-from ..models import usuario_model
-# Importa o objeto db do módulo src, utilizado para manipulação do banco de dados
 from src import db
-# Importa o módulo usuario_schema do diretório schemas (um nível acima)
-from ..schemas import usuario_schema
+from ..models.usuario_model import UsuarioModel
+from ..entities.usuario import Usuario
 
 
-# Função para cadastrar um novo usuário no banco de dados
-def cadastrar_usuario(usuario):
-    # Cria uma instância de Usuario com nome e email recebidos
-    usuario_db = usuario_model.Usuario(nome=usuario.nome, email=usuario.email)
-    # Gera o hash da senha e armazena no objeto usuario_db
-    usuario_db.gen_senha(usuario.senha)
-    # Adiciona o novo usuário à sessão do banco de dados
+def cadastrar_usuario(usuario_entity):
+    usuario_db = UsuarioModel(nome = usuario_entity.nome, email = usuario_entity.email, telefone= usuario_entity.telefone, senha = usuario_entity.senha)
+   
+    #criptografia da senha
+    usuario_db.gen_senha(usuario_entity.senha)
     db.session.add(usuario_db)
-    # Salva (commita) as alterações no banco de dados
     db.session.commit()
-    # Retorna o objeto usuario_db criado
     return usuario_db
-    
-# Função para listar todos os usuários cadastrados
-def listar_usuarios():
-    # Busca todos os usuários no banco de dados
-    usuarios = usuario_model.Usuario.query.all()
-    # Cria um schema para serializar múltiplos usuários
-    schema = usuario_schema.UsuarioSchema(many=True)
-    # Retorna todos os usuários encontrados
-    return usuario_model.Usuario.query.all() 
 
-def listar_usuario_id(id):
-    ...
-
-def excluir_usuario():
-    ...
-
-def editar_usuario():
-    ...
+def listar_usuario():
+    usuario_db = UsuarioModel.query.all()
+    usuario_enti= [
+        Usuario(u.nome, u.email, u.telefone, u.senha) for u in usuario_db
+    ]
+    return usuario_enti
 
 def listar_usuario_email(email):
-    # Busca um usuário pelo email no banco de dados
-    return usuario_model.Usuario.query.filter_by(email=email).first()
+    usuario_db = UsuarioModel.query.filter_by(email= email).first()
+
+    if usuario_db:
+        return Usuario(usuario_db.nome,
+                       usuario_db.email,
+                       usuario_db.telefone,
+                       usuario_db.senha)
+    return None
+
+
+def listar_usuario_id(id):
+    try:
+        #buscar usuario
+        usuario_encontrado = UsuarioModel.query.get(id)
+        if usuario_encontrado:
+            return Usuario(usuario_encontrado.nome, usuario_encontrado.email, usuario_encontrado.telefone, usuario_encontrado.senha)
+    except Exception as e:
+        print(f'Erros ao listar usuario por id {e}')
+        return None
+
+def excluir_usuario(id):
+    usuario_db = UsuarioModel.query.get(id)
+
+    if usuario_db:
+        db.session.delete(usuario_db)
+        db.session.commit()
+        return True
+    
+    return False
+
+def editar_usuario(id, usuario_entity):
+    usuario_db = UsuarioModel.query.get(id)
+
+    if not usuario_db:
+        return None
+    
+    # atualiza os dados do usuario
+    usuario_db.nome = usuario_entity.nome
+    usuario_db.telefone = usuario_entity.telefone
+
+    if usuario_entity.senha:
+        usuario_db.gen_senha(usuario_entity.senha)
+
+    db.session.commit()
+
+    return Usuario(nome = usuario_db.nome,
+                   email = usuario_db.email,
+                   telefone = usuario_db.telefone,
+                   senha = usuario_db.senha)
+
+
+def listar_usuario_email(email):
+    usuario_db = UsuarioModel.query.filter_by(email=email).first()

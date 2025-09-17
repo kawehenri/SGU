@@ -1,62 +1,73 @@
-# Importa a classe Resource do flask_restful para criar recursos REST
 from flask_restful import Resource
-# Importa ValidationError do marshmallow para tratar erros de validação
 from marshmallow import ValidationError
-# Importa o módulo usuario_services para acessar funções de serviço de usuário
-from src.services import usuario_services
-# Importa request, jsonify e make_response do flask para manipular requisições e respostas HTTP
+from src.schemas import usuario_schema
 from flask import request, jsonify, make_response
-# Importa novamente usuario_services (pode ser removido se duplicado)
 from src.services import usuario_services
-# Importa o objeto api do módulo src para registrar recursos na API
+from src.entities import usuario
 from src import api
 from src.models.usuario_model import Usuario
 
-# POST - GET - PUT - DELETE
-# Classe para lidar com os endpoints relacionados a usuários
+# POST-GET-PUT-DELETE
+# Lidar com todos os usuarios
 class UsuarioList(Resource):
-    # Método GET para listar usuários
     def get(self):
-        # Busca todos os usuários cadastrados
-        usuarios = usuario_services.listar_usuarios()
+        usuarios = usuario_services.listar_usuario()
 
-        # Se não houver usuários, retorna mensagem informando
         if not usuarios:
-            return make_response(jsonify({"message": "Nenhum usuário encontrado."}))
+            return make_response(jsonify({'message':'Não existe usuarios!'}))
         
-        # Cria um schema para serializar múltiplos usuários
-        schema = usuario_services.usuario_schema.UsuarioSchema(many=True)
-
-        # Retorna a lista de usuários serializada com status 200
+        schema = usuario_schema.UsuarioSchema(many=True)
         return make_response(jsonify(schema.dump(usuarios)), 200)
 
-    # Método POST para cadastrar um novo usuário
     def post(self):
-        schema = usuario_services.usuario_schema.UsuarioSchema()
+        schema = usuario_schema.UsuarioSchema()
 
         try:
-            dados = schema.load(request.json) # load = desserializa o json
-        except ValidationError as e:
-            return make_response(jsonify(e.messages), 400)
-
-        if usuario_services.listar_usuario_email(dados["email"]):
-            return make_response(jsonify({"error": "Email já cadastrado."}), 400)
+            dados = schema.load(request.json)
+        except ValidationError as err:
+            return make_response(jsonify(err.messages), 400)
         
+        if usuario_services.listar_usuario_email(dados['email']):
+            return make_response(jsonify({'message': 'Email já cadastrado'}), 400)
+
         try:
-            # criação de novo usuario
-            novo_usuario = Usuario(
-                nome=dados["nome"],
-                email=dados["email"],
-                senha=dados["senha"],
-                telefone=dados["telefone"]
+            # criação do novo usuario no banco
+            novo_usuario = usuario.Usuario(
+                nome=dados['nome'],
+                email=dados['email'],
+                telefone=dados['telefone'],
+                senha=dados['senha']
             )
-
-            # Adiciona o novo usuário ao banco de dados
             resultado = usuario_services.cadastrar_usuario(novo_usuario)
+            return make_response(jsonify(schema.dump(resultado)), 201)
 
-            return make_response(jsonify(schema.dump(resultado)), 201) # dump = serializa o objeto
         except Exception as e:
-            return make_response(jsonify({"error": str(e)}), 500)  # make_response = manda o valor em json
+            return make_response(jsonify({'message':str(e)}), 400)
 
-# Adiciona o recurso UsuarioList à rota '/usuarios' na API
-api.add_resource(UsuarioList, '/usuarios')
+
+
+api.add_resource(UsuarioList, '/usuario')
+
+class UsuarioResource(Resource):
+    def get(self, id_usuario):
+        usuario_encontrado = usuario_services.listar_usuario_id(id_usuario)
+        if not usuario_encontrado:
+            return make_response(jsonify({'message': 'Usuário não encontrado'}), 404)
+        
+        schema = usuario_schema.UsuarioSchema()
+        return make_response(jsonify(schema.dump(usuario_encontrado)), 200)
+    
+    def put(self, id_usuario):
+        ...
+    def delete(self, id_usuario):
+        usuario_encontrado = usuario_services.listar_usuario_id(id_usuario)
+        if not usuario_encontrado:
+            return make_response(jsonify({'message': 'Usuário não encontrado'}), 404)
+        try:
+            usuario_services.excluir_usuario(id_usuario)
+            return make_response(jsonify({'message':'Usuario excluído com sucesso!'}), 200)
+        except Exception as e:
+            return make_response(jsonify({'message':str(e)}),400)
+        
+
+api.add_resource(UsuarioResource, 'usuario/<int:id_usuario>') # /usuario/1
