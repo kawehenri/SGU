@@ -11,7 +11,7 @@ class UsuarioSchema(ma.SQLAlchemyAutoSchema):
     # Classe interna Meta para configurar o schema
     class Meta:
         # Define o modelo associado ao schema
-        model = usuario_model.Usuario
+        model = usuario_model.UsuarioModel
         # Define os campos que serão serializados/deserializados
         fields = ("id", "nome", "email", "senha", "telefone")
 

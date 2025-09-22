@@ -5,7 +5,7 @@ from flask import request, jsonify, make_response
 from src.services import usuario_services
 from src.entities import usuario
 from src import api
-from src.models.usuario_model import Usuario
+from src.models.usuario_model import UsuarioModel
 
 # POST-GET-PUT-DELETE
 # Lidar com todos os usuarios
@@ -20,6 +20,14 @@ class UsuarioList(Resource):
         return make_response(jsonify(schema.dump(usuarios)), 200)
 
     def post(self):
+        # Verifica se o Content-Type é JSON
+        if not request.is_json:
+            return make_response(jsonify({'message': 'Content-Type deve ser application/json'}), 415)
+        
+        # Verifica se há dados JSON
+        if not request.json:
+            return make_response(jsonify({'message': 'Dados JSON são obrigatórios'}), 400)
+        
         schema = usuario_schema.UsuarioSchema()
 
         try:
@@ -70,4 +78,4 @@ class UsuarioResource(Resource):
             return make_response(jsonify({'message':str(e)}),400)
         
 
-api.add_resource(UsuarioResource, 'usuario/<int:id_usuario>') # /usuario/1
+api.add_resource(UsuarioResource, '/usuario/<int:id_usuario>') # /usuario/1

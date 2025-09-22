@@ -20,13 +20,6 @@ class UsuarioModel(db.Model):
     # Coluna 'telefone' do tipo string, não pode ser nula
     telefone = db.Column(db.String(50), nullable=False)
 
-    # Construtor da classe Usuario, acessa os atributos nome, email, senha e telefone
-    def __init__(self, nome, email, senha, telefone):
-        self.nome = nome
-        self.email = email
-        self.senha = senha
-        self.telefone = telefone
-
     # Método para gerar o hash da senha e armazenar no atributo senha
     def gen_senha(self, senha):
         self.senha = sha256.hash(senha)

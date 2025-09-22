@@ -58,5 +58,5 @@ def create_all_tables():
 # Criar tabelas automaticamente quando o módulo é importado
 create_all_tables()
 
-# TODO: Importar as views para API encontrar as rotas
-from .views import *
+# Importa todas as views para API encontrar as rotas
+from .views import usuario_view, servico_views, profissional_views,login_view 
